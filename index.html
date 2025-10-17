@@ -1,1 +1,155 @@
+<!doctype html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TotalKits — Catálogo</title>
+  <meta name="description" content="Catálogo moderno — Reservar por WhatsApp" />
+  <!-- Tailwind Play CDN (rápido, sin build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Ajustes rápidos para mejor contraste y límites */
+    html,body { height:100%; }
+    .card-img { height:220px; object-fit:cover; border-radius: .5rem; }
+    /* tiny transition para el hover */
+    .card { transition: transform .18s ease, box-shadow .18s ease; }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(0,0,0,0.45); }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 antialiased">
+  <header class="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center font-bold">TK</div>
+        <div>
+          <h1 class="text-lg font-semibold">TotalKits</h1>
+          <p class="text-xs text-gray-400 -mt-0.5">Jerseys importados • Reserva por WhatsApp</p>
+        </div>
+      </div>
+      <nav class="text-sm text-gray-400">
+        <a href="#catalogo" class="hover:text-white">Catálogo</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-10">
+    <section id="catalogo">
+      <h2 class="text-2xl font-semibold text-center mb-6">Nuestros productos</h2>
+      <div id="grid" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+  </main>
+
+  <!-- Botón flotante carrito (solo contador) -->
+  <div id="cartButton" class="fixed right-5 bottom-5 bg-green-600 text-black px-4 py-3 rounded-xl shadow-lg hidden">
+    🛒 <span id="cartCount">0</span>
+  </div>
+
+  <footer class="border-t border-gray-800 mt-12 py-8 text-center text-sm text-gray-500">
+    © TotalKits — Reserva por WhatsApp — No incluye envío
+  </footer>
+
+  <script>
+    // ================= CONFIG =================
+    // Cambia tu número WhatsApp aquí (formato internacional sin + ni espacios)
+    const WHATSAPP_NUMBER = '51987654321';
+
+    // URL local del JSON (archivo en la raíz del repo)
+    const PRODUCTS_JSON = 'products.json';
+    // ==========================================
+
+    // fetch productos y render
+    async function loadProducts() {
+      try {
+        const res = await fetch(PRODUCTS_JSON + '?v=' + Date.now());
+        if(!res.ok) throw new Error('No se pudo cargar products.json');
+        const products = await res.json();
+        renderProducts(products);
+      } catch (e) {
+        document.getElementById('grid').innerHTML = `<div class="text-center text-red-400">Error cargando productos: ${e.message}</div>`;
+        console.error(e);
+      }
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      products.forEach(p => {
+        const card = document.createElement('article');
+        card.className = 'card bg-gray-800 p-4 rounded-lg';
+        card.innerHTML = `
+          <img class="card-img w-full mb-4 bg-gray-700" src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/600x400?text=Sin+imagen'"/>
+          <div>
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-lg font-semibold">${escapeHtml(p.name)}</h3>
+                <p class="text-xs text-gray-400 mt-1">Código: ${escapeHtml(p.sku)}</p>
+              </div>
+              <div class="text-green-400 font-bold text-lg">${formatPrice(p.price)}</div>
+            </div>
+            <div class="mt-3 flex gap-2 items-center">
+              <select id="size-${p.id}" class="bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1">
+                ${p.sizes.map(s=>`<option value="${s}">${s}</option>`).join('')}
+              </select>
+              <input id="qty-${p.id}" type="number" min="1" value="1" class="w-20 text-black rounded px-2 py-1 text-sm"/>
+            </div>
+            <div class="mt-4 flex gap-2">
+              <button class="flex-1 bg-gradient-to-r from-green-400 to-green-600 text-black rounded py-2 font-semibold" onclick="reserve(${p.id})">Reservar por WhatsApp</button>
+              <button class="px-3 py-2 border border-gray-700 rounded text-sm text-gray-300" onclick="preview(${p.id})">Vista</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function formatPrice(n){ return 'S/' + Number(n).toFixed(2); }
+
+    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    async function getProductById(id){
+      const res = await fetch(PRODUCTS_JSON + '?v=' + Date.now());
+      const list = await res.json();
+      return list.find(x=>x.id === id);
+    }
+
+    async function reserve(id){
+      const p = await getProductById(id);
+      if(!p) return alert('Producto no encontrado');
+      const qty = document.getElementById('qty-'+id).value || 1;
+      const size = document.getElementById('size-'+id).value || '';
+      const lines = [
+        'Hola! Quiero reservar este producto:',
+        `${qty} x ${p.name} (Talla: ${size})`,
+        `Código: ${p.sku}`,
+        `Precio unidad: S/${Number(p.price).toFixed(2)}`,
+        'Nombre:',
+        'Dirección:',
+        'Teléfono:'
+      ];
+      const text = encodeURIComponent(lines.join('\\n'));
+      const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+      window.open(waUrl, '_blank');
+    }
+
+    async function preview(id){
+      const p = await getProductById(id);
+      if(!p) return;
+      const w = window.open('', '_blank');
+      const html = `
+        <body style="background:#0b1220;color:#fff;font-family:system-ui;padding:20px">
+          <h2>${p.name}</h2>
+          <img src="${p.img}" style="max-width:100%;height:auto;border-radius:8px;margin-top:10px" onerror="this.src='https://via.placeholder.com/800x500?text=Sin+imagen'"/>
+          <p style="margin-top:12px">Código: ${p.sku}</p>
+          <p>Precio: S/${Number(p.price).toFixed(2)}</p>
+        </body>
+      `;
+      w.document.write(html);
+      w.document.close();
+    }
+
+    // Iniciar
+    loadProducts();
+  </script>
+</body>
+</html>
 
