@@ -1,1 +1,27 @@
+[
+  {
+    "id": 1,
+    "name": "Jersey Adidas x Oasis (25 Aniversario)",
+    "price": 85,
+    "sku": "JER-AD-001",
+    "sizes": ["S","M","L","XL"],
+    "img": "images/liverpool.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Camiseta Retro Zebra",
+    "price": 75,
+    "sku": "CAM-RET-002",
+    "sizes": ["M","L","XL"],
+    "img": "images/zebra.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Jersey Alemania 2026 Player Version",
+    "price": 90,
+    "sku": "JER-LIM-003",
+    "sizes": ["M","L","XL"],
+    "img": "images/alemania.jpg"
+  }
+]
 
