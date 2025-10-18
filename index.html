@@ -76,26 +76,60 @@
         const card = document.createElement('article');
         card.className = 'card bg-gray-800 p-4 rounded-lg';
         card.innerHTML = `
-          <img class="card-img w-full mb-4 bg-gray-700" src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/600x400?text=Sin+imagen'"/>
-          <div>
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="text-lg font-semibold">${escapeHtml(p.name)}</h3>
-                <p class="text-xs text-gray-400 mt-1">Código: ${escapeHtml(p.sku)}</p>
-              </div>
-              <div class="text-green-400 font-bold text-lg">${formatPrice(p.price)}</div>
-            </div>
-            <div class="mt-3 flex gap-2 items-center">
-              <select id="size-${p.id}" class="bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1">
-                ${p.sizes.map(s=>`<option value="${s}">${s}</option>`).join('')}
-              </select>
-              <input id="qty-${p.id}" type="number" min="1" value="1" class="w-20 text-black rounded px-2 py-1 text-sm"/>
-            </div>
-            <div class="mt-4 flex gap-2">
-              <button class="flex-1 bg-gradient-to-r from-green-400 to-green-600 text-black rounded py-2 font-semibold" onclick="reserve(${p.id})">Reservar por WhatsApp</button>
-              <button class="px-3 py-2 border border-gray-700 rounded text-sm text-gray-300" onclick="preview(${p.id})">Vista</button>
-            </div>
-          </div>
+  <img class="card-img w-full mb-4 bg-gray-700 rounded-md" src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/600x400?text=Sin+imagen'"/>
+  <div>
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="text-lg font-semibold">${escapeHtml(p.name)}</h3>
+        <p class="text-xs text-gray-400 mt-1">Código: ${escapeHtml(p.sku)}</p>
+      </div>
+      <div class="text-green-400 font-bold text-lg">${formatPrice(p.price)}</div>
+    </div>
+
+    <!-- Selección de talla y cantidad -->
+    <div class="mt-3 grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs text-gray-400">Talla</label>
+        <select id="size-${p.id}" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1">
+          ${p.sizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400">Cantidad</label>
+        <input id="qty-${p.id}" type="number" min="1" value="1" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+      </div>
+    </div>
+
+    <!-- Opción de parche -->
+    <div class="mt-3 flex items-center gap-2">
+      <input type="checkbox" id="patch-${p.id}" class="accent-green-500">
+      <label for="patch-${p.id}" class="text-sm text-gray-300">Agregar parche oficial</label>
+    </div>
+
+    <!-- Personalización de dorsal -->
+    <div class="mt-2 grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs text-gray-400">Nombre dorsal</label>
+        <input id="name-${p.id}" type="text" placeholder="Ej. Bellingham" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400">Número dorsal</label>
+        <input id="number-${p.id}" type="number" placeholder="Ej. 5" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="mt-4 flex gap-2">
+      <button class="flex-1 bg-gradient-to-r from-green-400 to-green-600 text-black rounded py-2 font-semibold" onclick="reserve(${p.id})">
+        Reservar por WhatsApp
+      </button>
+      <button class="px-3 py-2 border border-gray-700 rounded text-sm text-gray-300" onclick="preview(${p.id})">
+        Vista
+      </button>
+    </div>
+  </div>
+`;
+
         `;
         grid.appendChild(card);
       });
