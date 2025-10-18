@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TotalKits — Catálogo</title>
   <meta name="description" content="Catálogo moderno — Reservar por WhatsApp" />
-  <!-- Tailwind Play CDN (rápido, sin build) -->
+  <!-- Tailwind Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Ajustes rápidos para mejor contraste y límites */
     html,body { height:100%; }
-    .card-img { height:220px; object-fit:cover; border-radius: .5rem; }
-    /* tiny transition para el hover */
+    .card-img { height:220px; object-fit:cover; border-radius:.5rem; }
     .card { transition: transform .18s ease, box-shadow .18s ease; }
     .card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(0,0,0,0.45); }
+    .fade-enter { opacity:0; transform:scale(.95); }
+    .fade-enter-active { opacity:1; transform:scale(1); transition: all .25s ease; }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 antialiased">
   <header class="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center font-bold">TK</div>
+        <img src="logo.png" alt="TotalKits" class="w-12 h-12 rounded-lg bg-gray-800 object-contain" onerror="this.style.display='none'">
         <div>
-          <h1 class="text-lg font-semibold">TotalKitsS</h1>
+          <h1 class="text-lg font-semibold">TotalKits</h1>
           <p class="text-xs text-gray-400 -mt-0.5">Jerseys importados • Reserva por WhatsApp</p>
         </div>
       </div>
@@ -31,6 +31,7 @@
       </nav>
     </div>
   </header>
+
   <main class="max-w-6xl mx-auto px-4 py-10">
     <section id="catalogo">
       <h2 class="text-2xl font-semibold text-center mb-6">Nuestros productos</h2>
@@ -38,34 +39,34 @@
     </section>
   </main>
 
-  <!-- Botón flotante carrito (solo contador) -->
-  <div id="cartButton" class="fixed right-5 bottom-5 bg-green-600 text-black px-4 py-3 rounded-xl shadow-lg hidden">
-    🛒 <span id="cartCount">0</span>
-  </div>
-
   <footer class="border-t border-gray-800 mt-12 py-8 text-center text-sm text-gray-500">
     © TotalKits — Reserva por WhatsApp — No incluye envío
   </footer>
 
+  <!-- Modal de Vista Previa -->
+  <div id="previewModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+    <div class="bg-gray-800 p-6 rounded-xl max-w-md w-11/12 relative">
+      <button id="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+      <img id="previewImg" src="" alt="Vista previa" class="w-full rounded-lg mb-4">
+      <h3 id="previewTitle" class="text-xl font-semibold"></h3>
+      <p id="previewCode" class="text-gray-400 text-sm mt-1"></p>
+      <p id="previewPrice" class="text-green-400 font-bold text-lg mt-3"></p>
+    </div>
+  </div>
+
   <script>
-    // ================= CONFIG =================
-    // Cambia tu número WhatsApp aquí (formato internacional sin + ni espacios)
     const WHATSAPP_NUMBER = '51987496977';
-
-    // URL local del JSON (archivo en la raíz del repo)
     const PRODUCTS_JSON = 'products.json';
-    // ==========================================
 
-    // fetch productos y render
     async function loadProducts() {
       try {
         const res = await fetch(PRODUCTS_JSON + '?v=' + Date.now());
-        if(!res.ok) throw new Error('No se pudo cargar products.json');
+        if (!res.ok) throw new Error('No se pudo cargar products.json');
         const products = await res.json();
         renderProducts(products);
       } catch (e) {
-        document.getElementById('grid').innerHTML = `<div class="text-center text-red-400">Error cargando productos: ${e.message}</div>`;
-        console.error(e);
+        document.getElementById('grid').innerHTML =
+          `<div class="text-center text-red-400">Error cargando productos: ${e.message}</div>`;
       }
     }
 
@@ -74,115 +75,124 @@
       grid.innerHTML = '';
       products.forEach(p => {
         const card = document.createElement('article');
-        card.className = 'card bg-gray-800 p-4 rounded-lg';
+        card.className = 'card bg-gray-800 p-4 rounded-lg fade-enter';
         card.innerHTML = `
-  <img class="card-img w-full mb-4 bg-gray-700 rounded-md" src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/600x400?text=Sin+imagen'"/>
-  <div>
-    <div class="flex justify-between items-start">
-      <div>
-        <h3 class="text-lg font-semibold">${escapeHtml(p.name)}</h3>
-        <p class="text-xs text-gray-400 mt-1">Código: ${escapeHtml(p.sku)}</p>
-      </div>
-      <div class="text-green-400 font-bold text-lg">${formatPrice(p.price)}</div>
-    </div>
+          <img class="card-img w-full mb-4 bg-gray-700" src="${p.img}" alt="${escapeHtml(p.name)}"
+            onerror="this.src='https://via.placeholder.com/600x400?text=Sin+imagen'"/>
+          <div>
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-lg font-semibold">${escapeHtml(p.name)}</h3>
+                <p class="text-xs text-gray-400 mt-1">Código: ${escapeHtml(p.sku)}</p>
+              </div>
+              <div class="text-green-400 font-bold text-lg">${formatPrice(p.price)}</div>
+            </div>
 
-    <!-- Selección de talla y cantidad -->
-    <div class="mt-3 grid grid-cols-2 gap-2">
-      <div>
-        <label class="text-xs text-gray-400">Talla</label>
-        <select id="size-${p.id}" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1">
-          ${p.sizes.map(s => `<option value="${s}">${s}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-400">Cantidad</label>
-        <input id="qty-${p.id}" type="number" min="1" value="1" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
-      </div>
-    </div>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-gray-400">Talla</label>
+                <select id="size-${p.id}" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1">
+                  ${p.sizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-gray-400">Cantidad</label>
+                <input id="qty-${p.id}" type="number" min="1" value="1"
+                  class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+              </div>
+            </div>
 
-    <!-- Opción de parche -->
-    <div class="mt-3 flex items-center gap-2">
-      <input type="checkbox" id="patch-${p.id}" class="accent-green-500">
-      <label for="patch-${p.id}" class="text-sm text-gray-300">Agregar parche oficial</label>
-    </div>
+            <div class="mt-3 flex items-center gap-2">
+              <input type="checkbox" id="patch-${p.id}" class="accent-green-500">
+              <label for="patch-${p.id}" class="text-sm text-gray-300">Agregar parche oficial</label>
+            </div>
 
-    <!-- Personalización de dorsal -->
-    <div class="mt-2 grid grid-cols-2 gap-2">
-      <div>
-        <label class="text-xs text-gray-400">Nombre dorsal</label>
-        <input id="name-${p.id}" type="text" placeholder="Ej. Bellingham" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
-      </div>
-      <div>
-        <label class="text-xs text-gray-400">Número dorsal</label>
-        <input id="number-${p.id}" type="number" placeholder="Ej. 5" class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
-      </div>
-    </div>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-gray-400">Nombre dorsal</label>
+                <input id="name-${p.id}" type="text" placeholder="Ej. Bellingham"
+                  class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-400">Número dorsal</label>
+                <input id="number-${p.id}" type="number" placeholder="Ej. 5"
+                  class="w-full bg-gray-900 border border-gray-700 text-sm rounded px-2 py-1 text-white"/>
+              </div>
+            </div>
 
-    <!-- Botones -->
-    <div class="mt-4 flex gap-2">
-      <button class="flex-1 bg-gradient-to-r from-green-400 to-green-600 text-black rounded py-2 font-semibold" onclick="reserve(${p.id})">
-        Reservar por WhatsApp
-      </button>
-      <button class="px-3 py-2 border border-gray-700 rounded text-sm text-gray-300" onclick="preview(${p.id})">
-        Vista
-      </button>
-    </div>
-  </div>
-`;
-
+            <div class="mt-4 flex gap-2">
+              <button class="flex-1 bg-gradient-to-r from-green-400 to-green-600 text-black rounded py-2 font-semibold"
+                onclick="reserve(${p.id})">Reservar por WhatsApp</button>
+              <button class="px-3 py-2 border border-gray-700 rounded text-sm text-gray-300"
+                onclick="preview(${p.id})">Vista</button>
+            </div>
+          </div>
         `;
         grid.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('fade-enter-active'));
       });
     }
 
-    function formatPrice(n){ return 'S/' + Number(n).toFixed(2); }
+    function formatPrice(n) { return 'S/' + Number(n).toFixed(2); }
+    function escapeHtml(s) { return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-    async function getProductById(id){
+    async function getProductById(id) {
       const res = await fetch(PRODUCTS_JSON + '?v=' + Date.now());
       const list = await res.json();
-      return list.find(x=>x.id === id);
+      return list.find(x => x.id === id);
     }
 
-    async function reserve(id){
+    async function reserve(id) {
       const p = await getProductById(id);
-      if(!p) return alert('Producto no encontrado');
-      const qty = document.getElementById('qty-'+id).value || 1;
-      const size = document.getElementById('size-'+id).value || '';
+      if (!p) return alert('Producto no encontrado');
+
+      const qty = document.getElementById('qty-' + id).value || 1;
+      const size = document.getElementById('size-' + id).value || '';
+      const patch = document.getElementById('patch-' + id).checked ? 'Sí' : 'No';
+      const dorsalName = document.getElementById('name-' + id).value.trim();
+      const dorsalNumber = document.getElementById('number-' + id).value.trim();
+
       const lines = [
-        'Hola! Quiero reservar este producto:',
-        `${qty} x ${p.name} (Talla: ${size})`,
-        `Código: ${p.sku}`,
-        `Precio unidad: S/${Number(p.price).toFixed(2)}`,
+        '👕 *Nueva reserva TotalKits*',
+        '',
+        `*Producto:* ${p.name}`,
+        `*Código:* ${p.sku}`,
+        `*Talla:* ${size}`,
+        `*Cantidad:* ${qty}`,
+        `*Parche oficial:* ${patch}`,
+        dorsalName || dorsalNumber ? `*Personalizado:* ${dorsalName || '(sin nombre)'} ${dorsalNumber ? ' #' + dorsalNumber : ''}` : '',
+        '',
+        `💰 *Precio unidad:* S/${Number(p.price).toFixed(2)}`,
+        '',
+        '📍 *Datos de envío:*',
         'Nombre:',
         'Dirección:',
         'Teléfono:'
       ];
-      const text = encodeURIComponent(lines.join('\\n'));
+
+      const text = encodeURIComponent(lines.filter(Boolean).join('\n'));
       const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
       window.open(waUrl, '_blank');
     }
 
-    async function preview(id){
+    async function preview(id) {
       const p = await getProductById(id);
-      if(!p) return;
-      const w = window.open('', '_blank');
-      const html = `
-        <body style="background:#0b1220;color:#fff;font-family:system-ui;padding:20px">
-          <h2>${p.name}</h2>
-          <img src="${p.img}" style="max-width:100%;height:auto;border-radius:8px;margin-top:10px" onerror="this.src='https://via.placeholder.com/800x500?text=Sin+imagen'"/>
-          <p style="margin-top:12px">Código: ${p.sku}</p>
-          <p>Precio: S/${Number(p.price).toFixed(2)}</p>
-        </body>
-      `;
-      w.document.write(html);
-      w.document.close();
+      if (!p) return;
+
+      document.getElementById('previewImg').src = p.img || 'https://via.placeholder.com/600x400?text=Sin+imagen';
+      document.getElementById('previewTitle').textContent = p.name;
+      document.getElementById('previewCode').textContent = 'Código: ' + p.sku;
+      document.getElementById('previewPrice').textContent = 'Precio: S/' + Number(p.price).toFixed(2);
+      document.getElementById('previewModal').classList.remove('hidden');
+      document.getElementById('previewModal').classList.add('flex');
     }
 
-    // Iniciar
+    document.getElementById('closeModal').onclick = () => {
+      document.getElementById('previewModal').classList.add('hidden');
+      document.getElementById('previewModal').classList.remove('flex');
+    };
+
     loadProducts();
   </script>
 </body>
 </html>
-
